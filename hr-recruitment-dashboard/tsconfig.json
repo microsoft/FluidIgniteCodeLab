@@ -1,0 +1,20 @@
+{
+	"compilerOptions": {
+		"outDir": "./dist",
+		"target": "es6",
+		"module": "Node16",
+		"sourceMap": true,
+		// Set your preferences here for TypeScript
+		"strict": true,
+		"jsx": "react",
+		"moduleResolution": "Node16",
+		"allowSyntheticDefaultImports": true,
+		"esModuleInterop": true,
+		// @fluentui packages generate so many errors without this
+		"skipLibCheck": true,
+		"baseUrl": "src/",
+		"paths" : {
+			"@lab/*": ["mod3/*"], // Change this line to change import paths!
+		}
+	},
+}
