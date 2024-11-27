@@ -19,6 +19,7 @@ import {
 	TinyliciousContainerServices,
 } from "@fluidframework/tinylicious-client";
 import { speStart } from "./infra/speStart.js";
+import { createDevtoolsLogger, initializeDevtools } from "@fluidframework/devtools/beta";
 
 // Create contexts for PresenceManager and undoRedo, these will be shared with underlying components
 export const PresenceContext = createContext<PresenceManager | undefined>(undefined);
@@ -46,8 +47,11 @@ async function tinyliciousStart() {
 
 // Render the Fluid view using the TinyliciousClient
 async function renderFluidViewWithTinylicious(root: Root) {
+	// Instantiate the logger
+	const devtoolsLogger = createDevtoolsLogger();
+
 	// Create a new TinyliciousClient
-	const tinyliciousClient = new TinyliciousClient();
+	const tinyliciousClient = new TinyliciousClient({ logger: devtoolsLogger });
 
 	// Get the container ID from the URL parameters (if available)
 	let containerId = new URLSearchParams(window.location.search).get("fluidContainerId") || "";
@@ -66,6 +70,18 @@ async function renderFluidViewWithTinylicious(root: Root) {
 			"2", // Compatibility mode flag for the container. "2" means use the container in FF 2.x mode
 		));
 	}
+
+	// Initialize the Devtools passing the logger and your Container.
+	// The Container could be added later as well with devtools.registerContainerDevtools().
+	const devtools = initializeDevtools({
+		logger: devtoolsLogger,
+		initialContainers: [
+			{
+				container,
+				containerKey: "HR App Container",
+			},
+		],
+	});
 
 	let appView = <div></div>;
 

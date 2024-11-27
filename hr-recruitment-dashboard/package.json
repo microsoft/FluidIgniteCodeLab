@@ -32,6 +32,7 @@
 		"@fluidframework/presence": "^2.10.0",
 		"@fluidframework/tinylicious-client": "^2.10.0",
 		"@fluidframework/tree": "^2.10.0",
+		"@fluidframework/devtools": "^2.10.0",
 		"@microsoft/microsoft-graph-client": "^3.0.7",
 		"fluid-framework": "^2.10.0",
 		"openai": "^4.67.3",
