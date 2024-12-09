@@ -27,6 +27,8 @@ export class PresenceManager {
 	// A callback methid to get updates when remote UserInfo changes
 	private userInfoCallback: (userInfoMap: Map<ISessionClient, UserInfo>) => void = () => { };
 
+	myRandomName = "";
+
 	constructor(
 		private readonly presence: IPresence,
 		private readonly audience: IOdspAudience | ITinyliciousAudience,
@@ -68,12 +70,17 @@ export class PresenceManager {
 		const myselfMember = this.audience.getMyself();
 
 		if (myselfMember) {
-			const myRandomName = uniqueNamesGenerator({ dictionaries: [adjectives, animals], separator: ' ', style: 'capital' });
+			const isOdsp = isOdspMember(myselfMember);
+
+			// Generate a random name if it doesn't exist
+			if (this.myRandomName == "" && !isOdsp) {
+				this.myRandomName = uniqueNamesGenerator({ dictionaries: [adjectives, animals], separator: ' ', style: 'capital' });
+			}
 
 			this.appSelectionPresenceState.props.userInfo.local = {
 				userId: myselfMember.id,
-				userName: isOdspMember(myselfMember) ? myselfMember.name : myRandomName,
-				userEmail: isOdspMember(myselfMember) ? myselfMember.email : myRandomName.replace(/ /g, "_") + "@hotmail.com",
+				userName: isOdsp ? myselfMember.name : this.myRandomName,
+				userEmail: isOdsp ? myselfMember.email : this.myRandomName.replace(/ /g, "_") + "@hotmail.com",
 			};
 
 			this.userInfoMap.set(
@@ -111,10 +118,10 @@ export class PresenceManager {
 				if (userInfo) {
 					// If the user is local user, then add it to the beginning of the list
 					if (sessionClient.sessionId === this.presence.getMyself().sessionId) {
-						userInfoList.unshift(userInfo);
+						userInfoList.push(userInfo);
 					} else {
 						// If the user is remote user, then add it to the end of the list
-						userInfoList.push(userInfo);
+						userInfoList.unshift(userInfo);
 					}
 				}
 				// eslint-disable-next-line @typescript-eslint/no-unused-vars
