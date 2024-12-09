@@ -61,34 +61,57 @@ export function CandidatesListView(props: {
 		>(
 			new Map(
 				// Get candidate selection from the PresenceState object
-				[...presenceManager.getStates().candidateSelection.clientValues()].map(
-					(cv) => [cv.client, cv.value.candidateSelected] as [ISessionClient, string],
-				),
+				[...presenceManager.getStates().candidateSelection.clientValues()]
+					.filter((cv) => cv.client.getConnectionStatus() === "Connected") // Filter for only connected clients
+					.map(
+						(cv) => [cv.client, cv.value.candidateSelected] as [ISessionClient, string],
+					),
 			),
 		);
 		useEffect(() => {
 			// Listen to the "updated" event for changes to candiate selection by remote clients
-			return presenceManager.getStates().candidateSelection.events.on("updated", (update) => {
-				const remoteSessionClient = update.client; // The client that updated the state
-				const remoteSelectedCandidateId = update.value.candidateSelected; // The candidate selected by the remote client
+			const unsubCandidateUpdated = presenceManager
+				.getStates()
+				.candidateSelection.events.on("updated", (update) => {
+					const remoteSessionClient = update.client; // The client that updated the state
+					const remoteSelectedCandidateId = update.value.candidateSelected; // The candidate selected by the remote client
 
-				// if empty string, then no candidate is selected, remove it from the map
-				if (remoteSelectedCandidateId === "") {
-					// Remove the candidate selection if the remote client unselected the candidate
-					candidatePresenceMap.delete(remoteSessionClient);
-					setCandidatePresenceMap(new Map(candidatePresenceMap));
-				} else {
-					// Set the new candidate seletion value for the remove client in our local map
-					setCandidatePresenceMap(
-						new Map(
-							candidatePresenceMap.set(
-								remoteSessionClient,
-								remoteSelectedCandidateId,
+					// if empty string, then no candidate is selected, remove it from the map
+					if (
+						remoteSelectedCandidateId === "" ||
+						remoteSessionClient.getConnectionStatus() !== "Connected"
+					) {
+						// Remove the candidate selection if the remote client unselected the candidate
+						candidatePresenceMap.delete(remoteSessionClient);
+						setCandidatePresenceMap(new Map(candidatePresenceMap));
+					} else {
+						// Set the new candidate seletion value for the remove client in our local map
+						setCandidatePresenceMap(
+							new Map(
+								candidatePresenceMap.set(
+									remoteSessionClient,
+									remoteSelectedCandidateId,
+								),
 							),
-						),
-					);
-				}
-			});
+						);
+					}
+				});
+			const unsubDisconnect = presenceManager
+				.getPresence()
+				.events.on("attendeeDisconnected", (remoteSessionClient) => {
+					if (
+						candidatePresenceMap &&
+						remoteSessionClient.getConnectionStatus() !== "Connected"
+					) {
+						// Remove the job selection if the remote client unselected the job
+						candidatePresenceMap.delete(remoteSessionClient);
+						setCandidatePresenceMap(new Map(candidatePresenceMap));
+					}
+				});
+			return () => {
+				unsubCandidateUpdated();
+				unsubDisconnect();
+			};
 		}, []);
 		// Get the UserInfo for each candidate selected by remote clients
 		candidatePresenceUserInfoList = getJob().candidates.map((candidate) => {
