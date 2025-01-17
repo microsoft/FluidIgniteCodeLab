@@ -58,7 +58,7 @@ export class OnSiteSchedule extends sf.object("OnSiteSchedule", {
 		this.interviewerIds.insertAtEnd(interviewerId);
 	};
 
-    // Method to remove an interviewer from the schedule.
+	// Method to remove an interviewer from the schedule.
 	public readonly removeInterviewer = (interviewerId: string) => {
 		const index = this.interviewerIds.indexOf(interviewerId);
 		if (index !== -1) {
@@ -107,7 +107,7 @@ export class Interviewer extends sf.object("Interviewer", {
 			description: "The availability of the interviewer. This field is required.",
 		},
 	}),
-}) { }
+}) {}
 
 // The Candidate class represents a candidate with their details and availability.
 export class Candidate extends sf.object("Candidate", {
@@ -132,7 +132,7 @@ export class Candidate extends sf.object("Candidate", {
 				"The boolean value that determines if the LLM or AI help was used. This field is required. The default is false. This field should be set to true when llm or ai makes any edits to any objects of this type",
 		},
 	}),
-}) { }
+}) {}
 
 // The Job class represents a job with its details, candidates, and on-site schedules.
 export class Job extends sf.object("Job", {
@@ -218,6 +218,6 @@ export class HRData extends sf.object("HRData", {
 				Interviewers should not be removed from this array.`,
 		},
 	}),
-}) { }
+}) {}
 
 export const treeConfiguration = new TreeViewConfiguration({ schema: HRData });

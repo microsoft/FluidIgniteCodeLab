@@ -20,6 +20,8 @@ import { PresenceContext, UndoRedoContext } from "../index.js";
 import { HRApp } from "../hrApp.js";
 import { PresenceManager } from "../utils/presenceManager.js";
 import { AttachState } from "fluid-framework";
+import { v4 as uuid } from "uuid";
+import { createDevtoolsLogger, initializeDevtools } from "@fluidframework/devtools/beta";
 
 // Function to start the app with SharePointEmbedded
 export async function speStart() {
@@ -158,6 +160,19 @@ async function createFluidApp(
 	// Initialize Fluid Container - this will either make a new container or load an existing one
 	const { container, services } = await loadFluidData(containerId, containerSchema, client);
 
+	// Initialize the Devtools passing the logger and your Container.
+	// The Container could be added later as well with devtools.registerContainerDevtools().
+	const devtoolsLogger = createDevtoolsLogger();
+	const devtools = initializeDevtools({
+		logger: devtoolsLogger,
+		initialContainers: [
+			{
+				container,
+				containerKey: "HR App Container",
+			},
+		],
+	});
+
 	let appView = <div></div>;
 
 	// Initialize the SharedTree Data Structure
@@ -197,7 +212,7 @@ async function createFluidApp(
 		// Attach the container to the Fluid service which
 		// uploads the container to the service and connects to the collaboration session.
 		// This returns the Fluid container id.
-		const itemId = await container.attach();
+		const itemId = await container.attach({ fileName: uuid() + ".fluid" });
 
 		// Create a sharing id to the container.
 		// This allows the user to collaborate on the same Fluid container

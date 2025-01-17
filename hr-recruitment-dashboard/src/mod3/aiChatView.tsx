@@ -9,6 +9,7 @@ import { Tree, TreeNode, TreeView } from "@fluidframework/tree";
 import { aiCollab, AiCollabOptions } from "@fluidframework/ai-collab/alpha";
 import { AzureOpenAI } from "openai";
 import { HRData, OnSiteSchedule } from "./appSchema.js";
+import * as webllm from "@mlc-ai/web-llm";
 
 export interface AiChatViewProps {
 	treeRoot: TreeView<typeof HRData>;
@@ -27,12 +28,12 @@ export function AiChatView(props: AiChatViewProps): JSX.Element {
 		// Fetch our API key and endpoint from the environment variables.
 		const apiKey = process.env.AZURE_OPENAI_API_KEY;
 		if (apiKey === null || apiKey === undefined) {
-			throw new Error("AZURE_OPENAI_API_KEY environment variable not set");
+			// throw new Error("AZURE_OPENAI_API_KEY environment variable not set");
 		}
 
 		const endpoint = process.env.AZURE_OPENAI_ENDPOINT;
 		if (endpoint === null || endpoint === undefined) {
-			throw new Error("AZURE_OPENAI_ENDPOINT environment variable not set");
+			// throw new Error("AZURE_OPENAI_ENDPOINT environment variable not set");
 		}
 
 		const viewAlpha = asTreeViewAlpha(props.treeRoot);
@@ -41,20 +42,69 @@ export function AiChatView(props: AiChatViewProps): JSX.Element {
 		// The changes to branch are not available/visible to other clients until the branch is merged to the main branch.
 		const newBranchFork = viewAlpha.fork();
 
+		// Callback function to update model loading progress
+		const initProgressCallback = (initProgress: () => void) => {
+			console.log(initProgress);
+		};
+		// const selectedModel = "Llama-3.1-8B-Instruct-q4f32_1-MLC";
+		// const selectedModel = "Llama-3.2-3B-Instruct-q4f32_1-MLC";
+		// const selectedModel = "SmolLM2-1.7B-Instruct-q4f16_1-MLC";
+		// const selectedModel = "SmolLM2-360M-Instruct-q4f16_1-MLC";
+		// const selectedModel = "Phi-3.5-mini-instruct-q4f32_1-MLC";
+		const selectedModel = "Hermes-3-Llama-3.1-8B-q4f32_1-MLC";
+
+		// const engine = await webllm.CreateMLCEngine(
+		// 	selectedModel,
+		// 	{ initProgressCallback: initProgressCallback }, // engineConfig
+		// );
+
+		const engine: webllm.MLCEngineInterface = await webllm.CreateWebWorkerMLCEngine(
+			new Worker(new URL("./worker.ts", import.meta.url), { type: "module" }),
+			selectedModel,
+			{ initProgressCallback: initProgressCallback },
+		);
+		engine.beta = engine;
+		// call engine.chat.completions.create but parse JSON before returning
+		//eslint-disable-next-line
+		engine.chat.completions.parse = async (request: any) => {
+			console.log("making request");
+			const response = await engine.chat.completions.create(request);
+			console.log("response received: ", response);
+			console.log(
+				"response.choices[0].message.content: ",
+				response.choices[0]?.message.content,
+			);
+			console.log("parsed content and added it to the choice object");
+			response.choices[0].message.parsed = JSON.parse(response.choices[0]?.message.content);
+			return response;
+		};
+
+		const messages = [
+			{ role: "system", content: "You are a helpful AI assistant." },
+			{ role: "user", content: "Hello!" },
+		];
+
+		const reply = await engine.chat.completions.create({
+			messages,
+		});
+		console.log(reply.choices[0].message);
+		console.log(reply.usage);
+
 		const aiCollabOptions: AiCollabOptions = {
 			// Here we are creating a new AzureOpenAI client with the provided API key and endpoint.
 			// You can also use OpenAI apis directly with model gpt-4o for similar results.
 			// Since we are using this in a controlled lab setting, we are using the apiKey method to authenticate our calls.
 			// Ideally, you should use other secure methods to authenticate your calls to LLM APIs.
 			openAI: {
-				client: new AzureOpenAI({
-					endpoint: endpoint,
-					deployment: "gpt-4o",
-					apiKey: apiKey,
-					apiVersion: "2024-08-01-preview",
-					dangerouslyAllowBrowser: true,
-				}),
-				modelName: "gpt-4o",
+				client: engine,
+				// new AzureOpenAI({
+				// 	endpoint: endpoint,
+				// 	deployment: "gpt-4o",
+				// 	apiKey: apiKey,
+				// 	apiVersion: "2024-08-01-preview",
+				// 	dangerouslyAllowBrowser: true,
+				// }),
+				modelName: selectedModel,
 			},
 			/*
 			The following options are also available:
@@ -71,6 +121,7 @@ export function AiChatView(props: AiChatViewProps): JSX.Element {
 					"Some important information about the schema that you should be aware -- Each Candidate is uniquely identified by `candidateId` field. Each Interviewer is uniquely identified by `interviewerId` field." +
 					"Each Job is uniquely identified by `jobId` field. Each job has an OnSiteSchedule array which is list of scheduled onsite interviews. An OnSiteSchedule object has candidateId which indicates the candidate for onsite and interviewerIds array" +
 					" indicates which interviewers are doing the interviews. These ids help identify the candidate and interviewers uniquely and help map their objects in the app." +
+					"Make sure you do not edit the root object, HRData1, because editing the root object is not allowed. You can only edit the objects under the root object, such as jobsList and interviewerPool." +
 					"Lastly, any object you update, make sure to set the `isUnread` field to true to indicate that the LLM or AI help was used. Only set the `llmCollboration` fields of object that you modify, not others.",
 				// the user prompt, currently passed directly to the LLM.
 				userAsk: inputPrompt,

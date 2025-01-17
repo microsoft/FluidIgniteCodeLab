@@ -18,6 +18,7 @@ export const getClientProps = (
 		siteUrl: siteUrl,
 		driveId: driveId,
 		filePath: "",
+		fileName: "",
 	};
 
 	return {

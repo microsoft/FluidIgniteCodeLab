@@ -59,7 +59,7 @@ export class OnSiteSchedule {
 		this.isUnread = isUnread;
 	}
 
-    // Method to add an interviewer to the schedule.
+	// Method to add an interviewer to the schedule.
 	public readonly addInterviewer = (interviewerId: string) => {
 		this.interviewerIds.push(interviewerId);
 	};

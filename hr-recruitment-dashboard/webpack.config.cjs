@@ -76,6 +76,6 @@ module.exports = {
 	devServer: {
 		port: 8080,
 		// Hot-reloading, the sole reason to use webpack here <3
-		hot: true,
+		hot: true
 	},
 };

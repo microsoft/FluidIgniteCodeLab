@@ -12,7 +12,7 @@ import {
 } from "@fluidframework/presence/alpha";
 import { OdspMember, type IOdspAudience } from "@fluidframework/odsp-client/beta";
 import { TinyliciousMember, type ITinyliciousAudience } from "@fluidframework/tinylicious-client";
-import { uniqueNamesGenerator, adjectives, animals } from 'unique-names-generator';
+import { uniqueNamesGenerator, adjectives, animals } from "unique-names-generator";
 
 // Type guard to check if a member is an OdspMember
 function isOdspMember(member: OdspMember | TinyliciousMember): member is OdspMember {
@@ -25,7 +25,7 @@ export class PresenceManager {
 	// A map of SessionClient to UserInfo, where users can share their info with other users
 	private readonly userInfoMap: Map<ISessionClient, UserInfo> = new Map();
 	// A callback methid to get updates when remote UserInfo changes
-	private userInfoCallback: (userInfoMap: Map<ISessionClient, UserInfo>) => void = () => { };
+	private userInfoCallback: (userInfoMap: Map<ISessionClient, UserInfo>) => void = () => {};
 
 	myRandomName = "";
 
@@ -74,13 +74,19 @@ export class PresenceManager {
 
 			// Generate a random name if it doesn't exist
 			if (this.myRandomName == "" && !isOdsp) {
-				this.myRandomName = uniqueNamesGenerator({ dictionaries: [adjectives, animals], separator: ' ', style: 'capital' });
+				this.myRandomName = uniqueNamesGenerator({
+					dictionaries: [adjectives, animals],
+					separator: " ",
+					style: "capital",
+				});
 			}
 
 			this.appSelectionPresenceState.props.userInfo.local = {
 				userId: myselfMember.id,
 				userName: isOdsp ? myselfMember.name : this.myRandomName,
-				userEmail: isOdsp ? myselfMember.email : this.myRandomName.replace(/ /g, "_") + "@hotmail.com",
+				userEmail: isOdsp
+					? myselfMember.email
+					: this.myRandomName.replace(/ /g, "_") + "@hotmail.com",
 			};
 
 			this.userInfoMap.set(
